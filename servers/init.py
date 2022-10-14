@@ -3,13 +3,18 @@ import os
 import sys
 import logging
 import subprocess
-from pathlib import Path
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(filename)s]: %(message)s')
 log = logging.getLogger()
 
+conn_auth_file_path = "/etc/beegfs/connauthfile"
 beegfs_service_type = ""
 store_beegfs_directory = ""
+
+# Pass connauthfile secret as environment vaiable 
+if 'CONN_AUTH_FILE_DATA' in os.environ:
+    with open(conn_auth_file_path, "w+") as fp:
+        fp.write(os.environ.get('CONN_AUTH_FILE_DATA'))
 
 # Determine any commands that will be used to setup BeeGFS targets:
 beegfs_setup = []
@@ -35,24 +40,6 @@ if beegfs_service_type == "":
 
 # Capture command line arguments that will be used to start BeeGFS:
 beegfs_args = sys.argv[1:]
-
-# Configure connection Authentication:
-        
-        
-# Override connAuthFile data if CONN_AUTH_FILE_DATA env variable is passed
-if 'CONN_AUTH_FILE_DATA' in os.environ:
-    conn_auth_file_path = Path('/etc/beegfs/connAuthFile')
-    Path(conn_auth_file_path.parent).mkdir(parents=True, exist_ok=True)
-    with open('/etc/beegfs/connAuthFile', "w") as fp:
-        fp.write(os.environ.get('CONN_AUTH_FILE_DATA'))            
-else:
-    for arg in beegfs_args:
-        if 'connAuthFile' in arg:
-            conn_auth_file_location = arg.split("=")[1].strip()
-            if not os.path.exists(conn_auth_file_location):
-                log.critical(f"ConnAuthFile for BeeGFS service {beegfs_service_type} not found.\n"\
-                            "Mount ConnAuthFile to the required location")
-                exit(1)
 
 # Determine BeeGFS targets configured specified in command line arguments:
 beegfs_targets=[]

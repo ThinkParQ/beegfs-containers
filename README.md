@@ -38,14 +38,14 @@ Management:
 
 ```
 docker run --privileged --env beegfs_setup_1="beegfs-setup-mgmtd -p /mnt/mgmt_tgt_mgmt01 -C -S mgmt_tgt_mgmt01" \
-    -it beegfs/beegfs-mgmtd:7.3.0 storeMgmtdDirectory=/mnt/mgmt_tgt_mgmt01 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1
+    -it esole/beegfs-mgmtd:7.3.0 storeMgmtdDirectory=/mnt/mgmt_tgt_mgmt01 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1
 ```
 
 Metadata: 
 
 ```
 docker run --privileged --env beegfs_setup_1="beegfs-setup-meta -C -p /mnt/meta_01_tgt_0101 -s 1 -S meta_01" \
-    -it beegfs/beegfs-meta:7.3.0 storeMetaDirectory=/mnt/meta_01_tgt_0101 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management
+    -it esole/beegfs-meta:7.3.0 storeMetaDirectory=/mnt/meta_01_tgt_0101 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management
 ```
 
 Storage:
@@ -54,6 +54,6 @@ Storage:
 docker run --privileged \
     --env beegfs_setup_1="beegfs-setup-storage -C -p /mnt/stor_01_tgt_101 -s 1 -S stor_01_tgt_101 -i 101" \
     --env beegfs_setup_2="beegfs-setup-storage -C -p /mnt/stor_01_tgt_102 -s 1 -S stor_01_tgt_101 -i 102" \
-    -it beegfs/beegfs-storage:7.3.0 storeStorageDirectory=/mnt/stor_01_tgt_101,/mnt/stor_01_tgt_102 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management
+    -it esole/beegfs-storage:7.3.0 storeStorageDirectory=/mnt/stor_01_tgt_101,/mnt/stor_01_tgt_102 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management
 ```
 ***
