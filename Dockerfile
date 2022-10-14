@@ -26,8 +26,8 @@ RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-deb10
 
 # Container expects the desired BeeGFS service to be specified as part of the run command: 
 # Example: docker run -it beegfs/beegfs-mgmtd:7.3.0 beegfs-mgmtd storeMgmtdDirectory=/mnt/beegfs-mgmtd\
-COPY start.sh /root/start.sh
-COPY init.py /root/init.py
+COPY servers/start.sh /root/start.sh
+COPY servers/init.py /root/init.py
 RUN chmod +x /root/start.sh /root/init.py
 # Make a default directory where BeeGFS services can store data:
 RUN mkdir -p /data/beegfs

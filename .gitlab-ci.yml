@@ -1,0 +1,18 @@
+stages:
+  - build_image
+
+before_script:
+  - docker info
+
+Build and Sign Docker Images:
+  stage: "build_image"
+  tags:
+    - docker-build
+  script: ".ci/build.sh"
+  after_script:
+    - docker logout
+    - PATH_KEYS=$HOME/.docker/trust/private
+    - rm -rf $PATH_KEYS/$SIGNER_KEY_NAME.key cosign.key
+  only:
+    - tags
+
