@@ -29,35 +29,40 @@ RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-deb10
 COPY start.sh /root/start.sh
 COPY init.py /root/init.py
 RUN chmod +x /root/start.sh /root/init.py
+# Make a default directory where BeeGFS services can store data:
+RUN mkdir -p /data/beegfs
+
 
 # Build beegfs-mgmtd docker image with `docker build -t repo/image-name  --target beegfs-mgmtd .`  
 FROM base AS beegfs-mgmtd
 ARG BEEGFS_SERVICE="beegfs-mgmtd"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
-RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/*
-RUN rm -rf /var/log 
+RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/* 
 ENTRYPOINT ["/root/start.sh"]
+
 
 # Build beegfs-meta docker image with `docker build -t repo/image-name  --target beegfs-meta .`  
 FROM base AS beegfs-meta
 ARG BEEGFS_SERVICE="beegfs-meta"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
 RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/*
-RUN rm -rf /var/log && rm -rf /etc/beegfs/*conf
+RUN rm -rf /etc/beegfs/*conf
 ENTRYPOINT ["/root/start.sh"]
+
 
 # Build beegfs-storage docker image with `docker build -t repo/image-name  --target beegfs-storage .`  
 FROM base AS beegfs-storage
 ARG BEEGFS_SERVICE="beegfs-storage"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
 RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/*
-RUN rm -rf /var/log && rm -rf /etc/beegfs/*conf
+RUN rm -rf /etc/beegfs/*conf
 ENTRYPOINT ["/root/start.sh"]
+
 
 # Build beegfs-all docker image with `docker build -t repo/image-name  --target beegfs-all .`  
 FROM base AS beegfs-all
 ARG BEEGFS_SERVICE="beegfs-all"
 RUN apt-get update && apt-get install libbeegfs-ib beegfs-mgmtd beegfs-meta beegfs-storage -y && rm -rf /var/lib/apt/lists/*
-RUN rm -rf /var/log && rm -rf /etc/beegfs/*conf
+RUN rm -rf /etc/beegfs/*conf
 ENTRYPOINT ["/root/start.sh"]
 # arguments passed as commands in docker run will be passed as arguments to start.sh inturn passed to BeeGFS service.
