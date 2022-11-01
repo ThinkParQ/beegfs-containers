@@ -1,7 +1,7 @@
 version: '3'
 services:
   beegfs-management:
-    image: thinkpranav/beegfs-repo-mgmtd:latest   
+    image: beegfs/beegfs-mgmtd:7.3.1   
     container_name: beegfs-mgmtd
     privileged: true    
     command: "storeMgmtdDirectory=/mnt/mgmt_tgt_mgmt01 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1"
@@ -16,7 +16,7 @@ services:
       # - /beegfs/connauthfile:/etc/beegfs/connauthfile
 
   beegfs-meta:
-    image: thinkpranav/beegfs-repo-meta:latest
+    image: beegfs/beegfs-meta:7.3.1
     container_name: beegfs-meta
     privileged: true    
     command: "storeMetaDirectory=/mnt/meta_01_tgt_0101 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management"
@@ -31,7 +31,7 @@ services:
       # - /beegfs/connauthfile:/etc/beegfs/connauthfile
 
   beegfs-storage:
-    image: thinkpranav/beegfs-repo-storage:latest
+    image: beegfs/beegfs-storage:7.3.1
     container_name: beegfs-storage
     privileged: true    
     command: "storeStorageDirectory=/mnt/stor_01_tgt_101,/mnt/stor_01_tgt_102 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management"

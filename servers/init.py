@@ -14,7 +14,8 @@ store_beegfs_directory = ""
 # Pass connauthfile secret as environment vaiable 
 if 'CONN_AUTH_FILE_DATA' in os.environ:
     with open(conn_auth_file_path, "w+") as fp:
-        fp.write(os.environ.get('CONN_AUTH_FILE_DATA'))
+        conn_auth_val = os.environ.get('CONN_AUTH_FILE_DATA')
+        fp.write(conn_auth_val.replace('\\n', '\n') + '\n')
 
 # Determine any commands that will be used to setup BeeGFS targets:
 beegfs_setup = []
