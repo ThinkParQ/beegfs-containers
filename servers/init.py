@@ -7,13 +7,13 @@ import subprocess
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(filename)s]: %(message)s')
 log = logging.getLogger()
 
-conn_auth_file_path = "/etc/beegfs/connauthfile"
+conn_auth_file_path = "/etc/beegfs/connAuthFile"
 beegfs_service_type = ""
 store_beegfs_directory = ""
 
 # Pass connauthfile secret as environment vaiable 
 if 'CONN_AUTH_FILE_DATA' in os.environ:
-    with open(conn_auth_file_path, "w+") as fp:
+    with open(conn_auth_file_path, "w") as fp:
         conn_auth_val = os.environ.get('CONN_AUTH_FILE_DATA')
         fp.write(conn_auth_val.replace('\\n', '\n') + '\n')
 
