@@ -7,8 +7,15 @@ import subprocess
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(filename)s]: %(message)s')
 log = logging.getLogger()
 
+conn_auth_file_path = "/etc/beegfs/connAuthFile"
 beegfs_service_type = ""
 store_beegfs_directory = ""
+
+# Pass connauthfile secret as environment vaiable 
+if 'CONN_AUTH_FILE_DATA' in os.environ:
+    with open(conn_auth_file_path, "w") as fp:
+        conn_auth_val = os.environ.get('CONN_AUTH_FILE_DATA')
+        fp.write(conn_auth_val.replace('\\n', '\n') + '\n')
 
 # Determine any commands that will be used to setup BeeGFS targets:
 beegfs_setup = []
@@ -91,5 +98,3 @@ if len(beegfs_setup) > 0:
 exit(0)
 
 # TODO: Set storeFsUUID, note - "blkid -s UUID" can only be run from a privileged container.
-# TODO: Have the script handle conn*File variables in a special way (create the files).
-    # OR ignore these and either warn or return a fatal error they aren't supported 
