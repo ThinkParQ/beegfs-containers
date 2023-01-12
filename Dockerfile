@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install nano vim dstat sysstat -y && rm -rf /var/l
 
 # Install Beegfs binaries from the public repo.
 RUN wget -q https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/gpg/GPG-KEY-beegfs -O- | apt-key add -
-RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-deb10.list -P /etc/apt/sources.list.d/
+RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-buster.list -P /etc/apt/sources.list.d/
 
 # Container expects the desired BeeGFS service to be specified as part of the run command: 
 # Example: docker run -it beegfs/beegfs-mgmtd:7.3.0 beegfs-mgmtd storeMgmtdDirectory=/mnt/beegfs-mgmtd\
