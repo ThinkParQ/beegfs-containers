@@ -17,7 +17,9 @@
 FROM debian:10.12-slim AS base
 ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/beegfs/sbin/:${PATH}"
-ARG BEEGFS_VERSION="7.3.1"
+# Note this is the default used when no version is specified.
+# Normally images are built using CI and the version is determined based on the Git tag.
+ARG BEEGFS_VERSION="7.4.0"
 ENV BEEGFS_VERSION=$BEEGFS_VERSION
 
 # Enable RDMA support

@@ -29,7 +29,9 @@ else
     fi
 
     echo "$(date --rfc-3339=ns) INFO [start.sh]: Attempting to start the BeeGFS '$BEEGFS_SERVICE' with arguments : $@ ${CONN_AUTH_FILE_CONFIG}"
-    $BEEGFS_SERVICE $@ ${CONN_AUTH_FILE_CONFIG}
+    # Use exec to replace the shell process so the BeeGFS service will directly receive signals sent to the container.
+    # This is important so we can shutdown gracefully and correctly write anything out to disk (like node states).
+    exec $BEEGFS_SERVICE $@ ${CONN_AUTH_FILE_CONFIG}
     
 fi
 exit 0
