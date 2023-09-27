@@ -1,0 +1,58 @@
+name: "Build and Publish"
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMES: "beegfs-all\nbeegfs-mgmtd\nbeegfs-meta\nbeegfs-storage"
+
+jobs:
+  publish-images:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2      
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.1.1
+        with:
+          cosign-release: "v2.1.1"          
+
+      - name: Build, tag, sign, and push the container images to GitHub Container Registry
+        run: |
+          beegfs_version=$(git describe --tags --match '*.*' --abbrev=10)
+          names=$(echo "${{ env.IMAGE_NAMES }}" | tr '\n' ' ')
+
+          for name in $names; do
+            image=ghcr.io/thinkparq/${name}:${beegfs_version}
+            docker build -t $image --build-arg BEEGFS_VERSION=${beegfs_version} --target ${name} .
+            docker push $image
+
+            DIGEST=$(docker image inspect $image --format '{{index .RepoDigests 0}}')
+            cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
+            -a "repo=${{ github.repository }}" \
+            -a "run=${{ github.run_id }}" \
+            -a "ref=${{ github.sha }}" \
+            $DIGEST
+
+          done
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
