@@ -52,6 +52,9 @@ jobs:
             -a "ref=${{ github.sha }}" \
             $DIGEST
 
+            docker tag $image ghcr.io/thinkparq/${name}:latest
+            docker push ghcr.io/thinkparq/${name}:latest
+
           done
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
