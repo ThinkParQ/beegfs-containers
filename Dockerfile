@@ -14,7 +14,7 @@
 
 # Using multi-stage docker with the same base image for all daemons.
 
-FROM debian:10.12-slim AS base
+FROM --platform=$TARGETPLATFORM debian:10.12-slim AS base
 ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/beegfs/sbin/:${PATH}"
 # Note this is the default used when no version is specified.
@@ -50,7 +50,7 @@ RUN mkdir -p /data/beegfs
 
 
 # Build beegfs-mgmtd docker image with `docker build -t repo/image-name  --target beegfs-mgmtd .`  
-FROM base AS beegfs-mgmtd
+FROM --platform=$TARGETPLATFORM  base AS beegfs-mgmtd
 ARG BEEGFS_SERVICE="beegfs-mgmtd"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
 RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/* 
@@ -58,7 +58,7 @@ ENTRYPOINT ["/root/start.sh"]
 
 
 # Build beegfs-meta docker image with `docker build -t repo/image-name  --target beegfs-meta .`  
-FROM base AS beegfs-meta
+FROM --platform=$TARGETPLATFORM base AS beegfs-meta
 ARG BEEGFS_SERVICE="beegfs-meta"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
 RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/*
@@ -67,7 +67,7 @@ ENTRYPOINT ["/root/start.sh"]
 
 
 # Build beegfs-storage docker image with `docker build -t repo/image-name  --target beegfs-storage .`  
-FROM base AS beegfs-storage
+FROM --platform=$TARGETPLATFORM base AS beegfs-storage
 ARG BEEGFS_SERVICE="beegfs-storage"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
 RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/*
@@ -76,7 +76,7 @@ ENTRYPOINT ["/root/start.sh"]
 
 
 # Build beegfs-all docker image with `docker build -t repo/image-name  --target beegfs-all .`  
-FROM base AS beegfs-all
+FROM --platform=$TARGETPLATFORM base AS beegfs-all
 ARG BEEGFS_SERVICE="beegfs-all"
 RUN apt-get update && apt-get install libbeegfs-ib beegfs-mgmtd beegfs-meta beegfs-storage -y && rm -rf /var/lib/apt/lists/*
 RUN rm -rf /etc/beegfs/*conf

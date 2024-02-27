@@ -4,27 +4,41 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "*"
+      - "v*"
+  pull_request:
+    branches:
+      - "main"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAMES: "beegfs-all\nbeegfs-mgmtd\nbeegfs-meta\nbeegfs-storage"
+  NAMESPACE: thinkparq
+  DOCKER_BUILDX_BUILD_PLATFORMS: "linux/amd64,linux/arm64"  
 
 jobs:
   publish-images:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
+    strategy:
+      matrix:
+        include:
+          - image_name: beegfs-all
+          - image_name: beegfs-mgmtd
+          - image_name: beegfs-meta
+          - image_name: beegfs-storage
     permissions:
       packages: write
       contents: read
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-tags: true
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2      
+        uses: docker/setup-buildx-action@v3    
 
       - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -35,27 +49,60 @@ jobs:
         with:
           cosign-release: "v2.1.1"          
 
-      - name: Build, tag, sign, and push the container images to GitHub Container Registry
+      - name: Determine what version of BeeGFS to build images for based on the last tag
+        id: determine_beegfs_version
         run: |
-          beegfs_version=$(git describe --tags --match '*.*' --abbrev=10)
-          names=$(echo "${{ env.IMAGE_NAMES }}" | tr '\n' ' ')
+          last_version=$(git describe --tags --abbrev=0)
+          echo "LAST_VERSION=$last_version" >> $GITHUB_OUTPUT
 
-          for name in $names; do
-            image=ghcr.io/thinkparq/${name}:${beegfs_version}
-            docker build -t $image --build-arg BEEGFS_VERSION=${beegfs_version} --target ${name} .
-            docker push $image
+      - name: Determine metadata for BeeGFS image
+        id: meta
+        uses: docker/metadata-action@v5.5.1
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.image_name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},prefix=
+            type=semver,pattern={{major}}.{{minor}},prefix=
 
-            DIGEST=$(docker image inspect $image --format '{{index .RepoDigests 0}}')
-            cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
-            -a "repo=${{ github.repository }}" \
-            -a "run=${{ github.run_id }}" \
-            -a "ref=${{ github.sha }}" \
-            $DIGEST
+      - name: Build and push image for each supported platform
+        uses: docker/build-push-action@v5.1.0
+        id: build_and_push
+        with:
+          context: .
+          platforms: "${{ env.DOCKER_BUILDX_BUILD_PLATFORMS }}"
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # If provenance is not set to false then the manifest list will contain unknown platform
+          # entries that are also displayed in GitHub. Some detail on why this is needed in:
+          # https://github.com/docker/buildx/issues/1509 and
+          # https://github.com/docker/build-push-action/issues/755#issuecomment-1607792956.
+          provenance: false
+          # Reference: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#adding-a-description-to-multi-arch-images
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Container images for the BeeGFS server services allowing fully containerized BeeGFS deployments
+          build-args: |
+            BEEGFS_VERSION=${{ steps.determine_beegfs_version.outputs.LAST_VERSION }}
+          target: ${{ matrix.image_name }}
 
-            docker tag $image ghcr.io/thinkparq/${name}:latest
-            docker push ghcr.io/thinkparq/${name}:latest
-
+      # Adapted from:
+      # https://github.blog/2021-12-06-safeguard-container-signing-capability-actions/
+      # https://github.com/sigstore/cosign-installer#usage
+      # Note we only sign the multi-platform image manifest, not the individual platform specific images.
+      - name: Sign container image with Cosign
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
           done
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
+          -a "repo=${{ github.repository }}" \
+          -a "run=${{ github.run_id }}" \
+          -a "ref=${{ github.sha }}" \
+           ${images}
         env:
+          TAGS: ${{ steps.meta.outputs.tags }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          DIGEST: ${{ steps.build_and_push.outputs.digest }}
