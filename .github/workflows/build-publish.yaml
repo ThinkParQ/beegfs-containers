@@ -3,16 +3,15 @@ name: "Build and Publish"
 on:
   workflow_dispatch:
   push:
+    # The ${{ github.ref_name }} is used as the BeeGFS version so this workflow should only be
+    # triggered by pushing tags that match the BeeGFS semantic versioning scheme.
     tags:
       - "[0-9].[0-9].[0-9]"
-  pull_request:
-    branches:
-      - "main"
 
 env:
   REGISTRY: ghcr.io
   NAMESPACE: thinkparq
-  DOCKER_BUILDX_BUILD_PLATFORMS: "linux/amd64,linux/arm64"  
+  DOCKER_BUILDX_BUILD_PLATFORMS: "linux/amd64,linux/arm64"
 
 jobs:
   publish-images:
@@ -29,13 +28,13 @@ jobs:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-tags: true
           fetch-depth: 0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3    
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
@@ -47,13 +46,7 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.1.1
         with:
-          cosign-release: "v2.1.1"          
-
-      - name: Determine what version of BeeGFS to build images for based on the last tag
-        id: determine_beegfs_version
-        run: |
-          last_version=$(git describe --tags --abbrev=0)
-          echo "LAST_VERSION=$last_version" >> $GITHUB_OUTPUT
+          cosign-release: "v2.1.1"
 
       - name: Determine metadata for BeeGFS image
         id: meta
@@ -83,7 +76,7 @@ jobs:
           # Reference: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#adding-a-description-to-multi-arch-images
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Container images for the BeeGFS server services allowing fully containerized BeeGFS deployments
           build-args: |
-            BEEGFS_VERSION=${{ steps.determine_beegfs_version.outputs.LAST_VERSION }}
+            BEEGFS_VERSION=${{ github.ref_name }}
           target: ${{ matrix.image_name }}
 
       # Adapted from:
