@@ -14,7 +14,7 @@
 
 # Using multi-stage docker with the same base image for all daemons.
 
-FROM --platform=$TARGETPLATFORM debian:10.12-slim AS base
+FROM --platform=$TARGETPLATFORM debian:12.10-slim AS base
 ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/beegfs/sbin/:${PATH}"
 # Note this is the default used when no version is specified.
@@ -29,16 +29,16 @@ RUN apt-get update && apt-get install rdma-core  infiniband-diags perftest -y &&
 # Notes:
 # 1) The following packages enable: ps (procps), lsmod (kmod), firewall mgmt (iptables), mkfs.xfs (xfsprogs), ip CLI utilities (iproute2).
 # 2) Not installing ethtool as it should be included in the base image. 
-# 3) gnupg2 is required for apt-key and ca-certificates is required to connect to the BeeGFS repo over HTTPS.
+# 3) ca-certificates is required to connect to the BeeGFS repo over HTTPS.
 # 4) wget is only used to download the BeeGFS GPG key and repository file.
-RUN apt-get update && apt-get install procps kmod iptables xfsprogs iproute2 gnupg2 ca-certificates wget -y && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install procps kmod iptables xfsprogs iproute2 ca-certificates wget -y && rm -rf /var/lib/apt/lists/*
 
 # Install Optional Utilities:
 RUN apt-get update && apt-get install nano vim dstat sysstat -y && rm -rf /var/lib/apt/lists/*
 
 # Install Beegfs binaries from the public repo.
-RUN wget -q https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/gpg/GPG-KEY-beegfs -O- | apt-key add -
-RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-buster.list -P /etc/apt/sources.list.d/
+RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/gpg/GPG-KEY-beegfs -O /etc/apt/trusted.gpg.d/beegfs.asc
+RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-bookworm.list -P /etc/apt/sources.list.d/
 
 # Container expects the desired BeeGFS service to be specified as part of the run command: 
 # Example: docker run -it beegfs/beegfs-mgmtd:7.3.0 beegfs-mgmtd storeMgmtdDirectory=/mnt/beegfs-mgmtd\
