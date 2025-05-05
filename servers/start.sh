@@ -18,14 +18,30 @@ echo "$(date --rfc-3339=ns) INFO [start.sh]: Attempting to configure and start t
 echo $@
 echo "$(date --rfc-3339=ns) INFO [start.sh]: Checking and initializing BeeGFS targets if needed."
 
+if [[ -z "${BEEGFS_VERSION}" ]]; then
+    echo "$(date --rfc-3339=ns) FATAL [start.sh]: The BEEGFS_VERSION environment variable is not set. This is required to determine the BeeGFS version."
+    exit 1
+fi
+
+beegfs_major_version=${BEEGFS_VERSION:0:1}
+if ! [[ "$beegfs_major_version" =~ ^[0-9]+$ ]]; then
+    echo "$(date --rfc-3339=ns) FATAL [start.sh]: The BEEGFS_VERSION environment variable does not start with a valid number."
+    exit 1
+fi
+
 if ! /root/init.py $@; then
 	echo "$(date --rfc-3339=ns) FATAL [start.sh]: An unrecoverable error was encountered while checking and initializing BeeGFS targets."
 	exit 1
 else
     export CONN_AUTH_FILE_CONFIG=""
 
+    # Configure connection authentication file based on service type and BeegFS version
     if [[ ! -z "${CONN_AUTH_FILE_DATA}" ]]; then
-        CONN_AUTH_FILE_CONFIG="connAuthFile=/etc/beegfs/connAuthFile"
+        if [[ "${BEEGFS_SERVICE}" == "beegfs-mgmtd" && "${beegfs_major_version}" -ne 7 ]]; then
+            CONN_AUTH_FILE_CONFIG="--auth-file /etc/beegfs/connAuthFile"
+        else
+            CONN_AUTH_FILE_CONFIG="connAuthFile=/etc/beegfs/connAuthFile"
+        fi
     fi
 
     echo "$(date --rfc-3339=ns) INFO [start.sh]: Attempting to start the BeeGFS '$BEEGFS_SERVICE' with arguments : $@ ${CONN_AUTH_FILE_CONFIG}"

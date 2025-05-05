@@ -44,8 +44,17 @@ docker build -t beegfs-storage:latest --target beegfs-storage .
 
 These Docker images can be run as follows: 
 
-Management: 
+#### Management: 
 
+##### V8 Management
+```
+docker run --privileged \
+    --env beegfs_setup_1="beegfs-mgmtd --init --db-file /mnt/mgmt_tgt_mgmt01/mgmtd.sqlite  --log-target stderr " \
+    --env CONN_AUTH_FILE_DATA="myconnauthsecret" \
+    -it beegfs-mgmtd:latest --db-file /mnt/mgmt_tgt_mgmt01/mgmtd.sqlite  --interfaces eth0,eth1  --log-target stderr --tls-disable true
+```
+
+##### V7 Management
 ```
 docker run --privileged \
     --env beegfs_setup_1="beegfs-setup-mgmtd -p /mnt/mgmt_tgt_mgmt01 -C -S mgmt_tgt_mgmt01" \
@@ -53,7 +62,8 @@ docker run --privileged \
     -it beegfs-mgmtd:latest storeMgmtdDirectory=/mnt/mgmt_tgt_mgmt01 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1
 ```
 
-Metadata: 
+
+#### Metadata: 
 
 ```
 docker run --privileged \
@@ -62,7 +72,7 @@ docker run --privileged \
     -it beegfs-meta:latest storeMetaDirectory=/mnt/meta_01_tgt_0101 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management
 ```
 
-Storage:
+#### Storage:
 
 ```
 docker run --privileged \

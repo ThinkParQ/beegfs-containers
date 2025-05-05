@@ -53,7 +53,9 @@ RUN mkdir -p /data/beegfs
 FROM --platform=$TARGETPLATFORM  base AS beegfs-mgmtd
 ARG BEEGFS_SERVICE="beegfs-mgmtd"
 ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
-RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/* 
+RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && \
+    if [ "${BEEGFS_VERSION%%.*}" -ne 7 ]; then apt-get install libbeegfs-license -y; fi && \
+    rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["/root/start.sh"]
 
 
