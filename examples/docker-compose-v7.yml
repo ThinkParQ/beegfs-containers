@@ -27,7 +27,7 @@ services:
       - beegfs_2
     volumes:
       - /beegfs/mgmt_tgt_mgmt01:/mnt/mgmt_tgt_mgmt01
-      # - /beegfs/connauthfile:/etc/beegfs/connauthfile
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
 
   beegfs-meta:
     image: ghcr.io/thinkparq/beegfs-meta:latest
@@ -42,7 +42,7 @@ services:
       - beegfs_2
     volumes:
       - /beegfs/meta_01_tgt_0101:/mnt/meta_01_tgt_0101
-      # - /beegfs/connauthfile:/etc/beegfs/connauthfile
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
 
   beegfs-storage:
     image: ghcr.io/thinkparq/beegfs-storage:latest
@@ -59,7 +59,7 @@ services:
     volumes:
       - /beegfs/stor_01_tgt_101:/mnt/stor_01_tgt_101
       - /beegfs/stor_01_tgt_102:/mnt/stor_01_tgt_102
-      # - /beegfs/connauthfile:/etc/beegfs/connauthfile
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
       
 networks:
   beegfs_1:

@@ -22,17 +22,22 @@ services:
     environment:
       - beegfs_setup_1=beegfs-mgmtd --init --db-file /mnt/mgmt_tgt_mgmt01/mgmtd.sqlite  --log-target stderr 
       - CONN_AUTH_FILE_DATA="Connection_Authentication_file_data"
+    # Enable the line below if you have license key in the environment variable
+    #   - BEEGFS_LICENSE_FILE_DATA=$BEEGFS_LICENSE_FILE_DATA
+    # Enable the two lines below if you have a TLS certificate in the environment variable
+    #   - TLS_KEY_FILE_DATA=$TLS_KEY_FILE_DATA
+    #   - TLS_CERT_FILE_DATA=$TLS_CERT_FILE_DATA
     networks: 
       - beegfs_1
       - beegfs_2
     volumes:
       - /beegfs/mgmt_tgt_mgmt01:/mnt/mgmt_tgt_mgmt01
-      # Enable the line below if you have a license file
-      - /etc/beegfs/license.pem:/etc/beegfs/license.pem
-      # Enable the two lines below if you have a TLS certificate and remove the --tls-disable true from the command line
-      # - /etc/beegfs/key.pem:/etc/beegfs/key.pem
-      # - /etc/beegfs/cert.pem:/etc/beegfs/cert.pem
-      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
+    # Enable the line below if you have a license file
+    #   - /etc/beegfs/license.pem:/etc/beegfs/license.pem
+    # Enable the two lines below if you have a TLS certificate and remove the --tls-disable true from the command line
+    #   - /etc/beegfs/key.pem:/etc/beegfs/key.pem
+    #   - /etc/beegfs/cert.pem:/etc/beegfs/cert.pem
+    #   - /beegfs/connauthfile:/etc/beegfs/conn.auth
 
   beegfs-meta:
     image: ghcr.io/thinkparq/beegfs-meta:latest
@@ -65,24 +70,7 @@ services:
       - /beegfs/stor_01_tgt_101:/mnt/stor_01_tgt_101
       - /beegfs/stor_01_tgt_102:/mnt/stor_01_tgt_102
       # - /beegfs/connauthfile:/etc/beegfs/conn.auth
-      
-  debian-helper:
-    image: debian:12
-    container_name: debian-helper
-    command: tail -f /dev/null
-    networks:
-      - beegfs_1
-      - beegfs_2
-    environment:
-      - CONN_AUTH_FILE_DATA="Connection_Authentication_file_data"
-    volumes:
-      - /etc/beegfs/license.pem:/etc/beegfs/license.pem
-      # Enable the two lines below if you have a TLS certificate
-      - /etc/beegfs/key.pem:/etc/beegfs/key.pem
-      - /etc/beegfs/cert.pem:/etc/beegfs/cert.pem
-      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
-    stdin_open: true
-    tty: true
+
 networks:
   beegfs_1:
     external: false

@@ -22,7 +22,6 @@ import subprocess
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s [%(filename)s]: %(message)s')
 log = logging.getLogger()
 
-conn_auth_file_path = "/etc/beegfs/connAuthFile"
 beegfs_service_type = ""
 store_beegfs_directory = ""
 beegfs_database_path = ""
@@ -34,11 +33,20 @@ if 'BEEGFS_VERSION' not in os.environ:
 beegfs_major_version = int(os.environ.get('BEEGFS_VERSION')[0])
 log.info(f"BeeGFS version: {beegfs_major_version}")
 
-# Pass connauthfile secret as environment vaiable 
-if 'CONN_AUTH_FILE_DATA' in os.environ:
-    with open(conn_auth_file_path, "w") as fp:
-        conn_auth_val = os.environ.get('CONN_AUTH_FILE_DATA')
-        fp.write(conn_auth_val.replace('\\n', '\n') + '\n')
+
+file_env_mapping = {
+    'CONN_AUTH_FILE_DATA': "/etc/beegfs/conn.auth",
+    'BEEGFS_LICENSE_FILE_DATA': "/etc/beegfs/license.pem",
+    'TLS_KEY_FILE_DATA': "/etc/beegfs/key.pem",
+    'TLS_CERT_FILE_DATA': "/etc/beegfs/cert.pem"
+}
+
+# Check if the environment variables are set and write their values to the corresponding files.
+for env_var, file_path in file_env_mapping.items():
+    if env_var in os.environ:
+        with open(file_path, "w") as fp:
+            file_data = os.environ.get(env_var)
+            fp.write(file_data.replace('\\n', '\n') + '\n')
 
 # Determine any commands that will be used to setup BeeGFS targets:
 beegfs_setup = []
