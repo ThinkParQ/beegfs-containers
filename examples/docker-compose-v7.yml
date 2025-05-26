@@ -1,0 +1,68 @@
+# Copyright 2022 ThinkParQ GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: '3'
+services:
+  beegfs-management:
+    image: ghcr.io/thinkparq/beegfs-mgmtd:latest   
+    container_name: beegfs-mgmtd
+    privileged: true    
+    command: "storeMgmtdDirectory=/mnt/mgmt_tgt_mgmt01 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1"
+    environment:
+      - beegfs_setup_1=beegfs-setup-mgmtd -p /mnt/mgmt_tgt_mgmt01 -C -S mgmt_tgt_mgmt01 
+      - CONN_AUTH_FILE_DATA="Connection_Authentication_file_data"
+    networks: 
+      - beegfs_1
+      - beegfs_2
+    volumes:
+      - /beegfs/mgmt_tgt_mgmt01:/mnt/mgmt_tgt_mgmt01
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
+
+  beegfs-meta:
+    image: ghcr.io/thinkparq/beegfs-meta:latest
+    container_name: beegfs-meta
+    privileged: true    
+    command: "storeMetaDirectory=/mnt/meta_01_tgt_0101 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management"
+    environment:
+      - beegfs_setup_1=beegfs-setup-meta -C -p /mnt/meta_01_tgt_0101 -s 1 -S meta_01
+      - CONN_AUTH_FILE_DATA="Connection_Authentication_file_data"
+    networks: 
+      - beegfs_1
+      - beegfs_2
+    volumes:
+      - /beegfs/meta_01_tgt_0101:/mnt/meta_01_tgt_0101
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
+
+  beegfs-storage:
+    image: ghcr.io/thinkparq/beegfs-storage:latest
+    container_name: beegfs-storage
+    privileged: true    
+    command: "storeStorageDirectory=/mnt/stor_01_tgt_101,/mnt/stor_01_tgt_102 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management"
+    environment:
+      - beegfs_setup_1=beegfs-setup-storage -C -p /mnt/stor_01_tgt_101 -s 1 -S stor_01_tgt_101 -i 101
+      - beegfs_setup_2=beegfs-setup-storage -C -p /mnt/stor_01_tgt_102 -s 1 -S stor_01_tgt_101 -i 102
+      - CONN_AUTH_FILE_DATA="Connection_Authentication_file_data"
+    networks: 
+      - beegfs_1
+      - beegfs_2
+    volumes:
+      - /beegfs/stor_01_tgt_101:/mnt/stor_01_tgt_101
+      - /beegfs/stor_01_tgt_102:/mnt/stor_01_tgt_102
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
+      
+networks:
+  beegfs_1:
+    external: false
+  beegfs_2:
+    external: false    

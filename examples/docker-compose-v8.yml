@@ -15,22 +15,32 @@
 version: '3'
 services:
   beegfs-management:
-    image: beegfs/beegfs-mgmtd:latest   
+    image: ghcr.io/thinkparq/beegfs-mgmtd:latest
     container_name: beegfs-mgmtd
     privileged: true    
-    command: "storeMgmtdDirectory=/mnt/mgmt_tgt_mgmt01 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1"
+    command: "--db-file /mnt/mgmt_tgt_mgmt01/mgmtd.sqlite  --interfaces eth0,eth1  --log-target stderr --tls-disable true"
     environment:
-      - beegfs_setup_1=beegfs-setup-mgmtd -p /mnt/mgmt_tgt_mgmt01 -C -S mgmt_tgt_mgmt01 
+      - beegfs_setup_1=beegfs-mgmtd --init --db-file /mnt/mgmt_tgt_mgmt01/mgmtd.sqlite  --log-target stderr 
       - CONN_AUTH_FILE_DATA="Connection_Authentication_file_data"
+    # Enable the line below if you have license key in the environment variable
+    #   - BEEGFS_LICENSE_FILE_DATA=$BEEGFS_LICENSE_FILE_DATA
+    # Enable the two lines below if you have a TLS certificate in the environment variable
+    #   - TLS_KEY_FILE_DATA=$TLS_KEY_FILE_DATA
+    #   - TLS_CERT_FILE_DATA=$TLS_CERT_FILE_DATA
     networks: 
       - beegfs_1
       - beegfs_2
     volumes:
       - /beegfs/mgmt_tgt_mgmt01:/mnt/mgmt_tgt_mgmt01
-      # - /beegfs/connauthfile:/etc/beegfs/connauthfile
+    # Enable the line below if you have a license file
+    #   - /etc/beegfs/license.pem:/etc/beegfs/license.pem
+    # Enable the two lines below if you have a TLS certificate and remove the --tls-disable true from the command line
+    #   - /etc/beegfs/key.pem:/etc/beegfs/key.pem
+    #   - /etc/beegfs/cert.pem:/etc/beegfs/cert.pem
+    #   - /beegfs/connauthfile:/etc/beegfs/conn.auth
 
   beegfs-meta:
-    image: beegfs/beegfs-meta:latest
+    image: ghcr.io/thinkparq/beegfs-meta:latest
     container_name: beegfs-meta
     privileged: true    
     command: "storeMetaDirectory=/mnt/meta_01_tgt_0101 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management"
@@ -42,10 +52,10 @@ services:
       - beegfs_2
     volumes:
       - /beegfs/meta_01_tgt_0101:/mnt/meta_01_tgt_0101
-      # - /beegfs/connauthfile:/etc/beegfs/connauthfile
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
 
   beegfs-storage:
-    image: beegfs/beegfs-storage:latest
+    image: ghcr.io/thinkparq/beegfs-storage:latest
     container_name: beegfs-storage
     privileged: true    
     command: "storeStorageDirectory=/mnt/stor_01_tgt_101,/mnt/stor_01_tgt_102 storeAllowFirstRunInit=false connInterfacesList=eth0,eth1 sysMgmtdHost=beegfs-management"
@@ -59,8 +69,8 @@ services:
     volumes:
       - /beegfs/stor_01_tgt_101:/mnt/stor_01_tgt_101
       - /beegfs/stor_01_tgt_102:/mnt/stor_01_tgt_102
-      # - /beegfs/connauthfile:/etc/beegfs/connauthfile
-      
+      # - /beegfs/connauthfile:/etc/beegfs/conn.auth
+
 networks:
   beegfs_1:
     external: false

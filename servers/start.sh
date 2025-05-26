@@ -18,20 +18,53 @@ echo "$(date --rfc-3339=ns) INFO [start.sh]: Attempting to configure and start t
 echo $@
 echo "$(date --rfc-3339=ns) INFO [start.sh]: Checking and initializing BeeGFS targets if needed."
 
+if [[ -z "${BEEGFS_VERSION}" ]]; then
+    echo "$(date --rfc-3339=ns) FATAL [start.sh]: The BEEGFS_VERSION environment variable is not set. This is required to determine the BeeGFS version."
+    exit 1
+fi
+
+beegfs_major_version=${BEEGFS_VERSION:0:1}
+if ! [[ "$beegfs_major_version" =~ ^[0-9]+$ ]]; then
+    echo "$(date --rfc-3339=ns) FATAL [start.sh]: The BEEGFS_VERSION environment variable does not start with a valid number."
+    exit 1
+fi
+
 if ! /root/init.py $@; then
 	echo "$(date --rfc-3339=ns) FATAL [start.sh]: An unrecoverable error was encountered while checking and initializing BeeGFS targets."
 	exit 1
-else
-    export CONN_AUTH_FILE_CONFIG=""
+fi
 
-    if [[ ! -z "${CONN_AUTH_FILE_DATA}" ]]; then
-        CONN_AUTH_FILE_CONFIG="connAuthFile=/etc/beegfs/connAuthFile"
+
+export CONFIG=""
+# Configure connection authentication file based on service type and BeeGFS version
+if [[ ! -z "${CONN_AUTH_FILE_DATA}" ]]; then
+    if [[ "${BEEGFS_SERVICE}" == "beegfs-mgmtd" && "${beegfs_major_version}" -ne 7 ]]; then
+        CONFIG="${CONFIG} --auth-file /etc/beegfs/conn.auth"
+    else
+        CONFIG="${CONFIG} connAuthFile=/etc/beegfs/conn.auth"
+    fi
+fi
+
+# Configure license and TLS files for mgmtd version 8 and above
+if [[ "${BEEGFS_SERVICE}" == "beegfs-mgmtd" && "${beegfs_major_version}" -ne 7 ]]; then
+    if [[ ! -z "${BEEGFS_LICENSE_FILE_DATA}" ]]; then
+        CONFIG="${CONFIG} --license-cert-file /etc/beegfs/license.pem"
     fi
 
-    echo "$(date --rfc-3339=ns) INFO [start.sh]: Attempting to start the BeeGFS '$BEEGFS_SERVICE' with arguments : $@ ${CONN_AUTH_FILE_CONFIG}"
-    # Use exec to replace the shell process so the BeeGFS service will directly receive signals sent to the container.
-    # This is important so we can shutdown gracefully and correctly write anything out to disk (like node states).
-    exec $BEEGFS_SERVICE $@ ${CONN_AUTH_FILE_CONFIG}
-    
+    if [[ ! -z "${TLS_KEY_FILE_DATA}" ]]; then
+        CONFIG="${CONFIG} --tls-key-file /etc/beegfs/key.pem"
+    fi
+
+    if [[ ! -z "${TLS_CERT_FILE_DATA}" ]]; then
+        CONFIG="${CONFIG} --tls-cert-file /etc/beegfs/cert.pem"
+    fi
 fi
+
+
+echo "$(date --rfc-3339=ns) INFO [start.sh]: Attempting to start the BeeGFS '$BEEGFS_SERVICE' with arguments : $@ ${CONFIG}"
+# Use exec to replace the shell process so the BeeGFS service will directly receive signals sent to the container.
+# This is important so we can shutdown gracefully and correctly write anything out to disk (like node states).
+exec $BEEGFS_SERVICE $@ ${CONFIG}
+    
+
 exit 0
