@@ -6,7 +6,7 @@ on:
     # The ${{ github.ref_name }} is used as the BeeGFS version so this workflow should only be
     # triggered by pushing tags that match the BeeGFS semantic versioning scheme.
     tags:
-      - "[0-9].[0-9].[0-9]"
+      - "[0-9].[0-9]"
 
 env:
   REGISTRY: ghcr.io
@@ -20,7 +20,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - image_name: beegfs-all
           - image_name: beegfs-mgmtd
           - image_name: beegfs-meta
           - image_name: beegfs-storage
@@ -48,6 +47,30 @@ jobs:
         with:
           cosign-release: "v2.1.1"
 
+      - name: Determine BeeGFS package version
+        id: pkg
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          BEEGFS_REPO_VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          repo_version="${BEEGFS_REPO_VERSION}"
+          tmpdir="$(mktemp -d)"
+          curl -fsSL "https://www.beegfs.io/release/beegfs_${repo_version}/gpg/GPG-KEY-beegfs" -o "${tmpdir}/beegfs.asc"
+          sudo install -o root -g root -m 644 "${tmpdir}/beegfs.asc" /etc/apt/trusted.gpg.d/beegfs.asc
+          curl -fsSL "https://www.beegfs.io/release/beegfs_${repo_version}/dists/beegfs-bookworm.list" -o "${tmpdir}/beegfs.list"
+          sudo install -o root -g root -m 644 "${tmpdir}/beegfs.list" /etc/apt/sources.list.d/beegfs.list
+          sudo apt-get update
+          package="${{ matrix.image_name }}"
+          candidate="$(apt-cache madison "${package}" | awk 'NR==1 {print $3}')"
+          if [ -z "${candidate}" ]; then
+            echo "Unable to determine package version for ${package}" >&2
+            exit 1
+          fi
+          version="${candidate#*:}" # Drop epoch but keep any suffix (e.g. -beta.0).
+          echo "candidate=${candidate}" >> "$GITHUB_OUTPUT"
+          echo "semantic=${version}" >> "$GITHUB_OUTPUT"
+
       - name: Determine metadata for BeeGFS image
         id: meta
         uses: docker/metadata-action@v5.5.1
@@ -56,8 +79,9 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}},prefix=
-            type=semver,pattern={{major}}.{{minor}},prefix=
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=${{ steps.pkg.outputs.semantic }},enable=${{ github.ref_type == 'tag' }}
 
       - name: Build and push image for each supported platform
         uses: docker/build-push-action@v5.1.0

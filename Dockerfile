@@ -36,7 +36,8 @@ RUN apt-get update && apt-get install procps kmod iptables xfsprogs iproute2 ca-
 # Install Optional Utilities:
 RUN apt-get update && apt-get install nano vim dstat sysstat -y && rm -rf /var/lib/apt/lists/*
 
-# Install Beegfs binaries from the public repo.
+# Install Beegfs binaries from the public repo. If/when these URLs change ensure to also update the
+# equivalent URLs in the build-publish.yaml workflow step used to determine BeeGFS package versions.
 RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/gpg/GPG-KEY-beegfs -O /etc/apt/trusted.gpg.d/beegfs.asc
 RUN wget https://www.beegfs.io/release/beegfs_$BEEGFS_VERSION/dists/beegfs-bookworm.list -P /etc/apt/sources.list.d/
 
@@ -75,12 +76,3 @@ ENV BEEGFS_SERVICE=$BEEGFS_SERVICE
 RUN apt-get update && apt-get install $BEEGFS_SERVICE libbeegfs-ib -y && rm -rf /var/lib/apt/lists/*
 RUN rm -rf /etc/beegfs/*conf
 ENTRYPOINT ["/root/start.sh"]
-
-
-# Build beegfs-all docker image with `docker build -t repo/image-name  --target beegfs-all .`  
-FROM --platform=$TARGETPLATFORM base AS beegfs-all
-ARG BEEGFS_SERVICE="beegfs-all"
-RUN apt-get update && apt-get install libbeegfs-ib beegfs-mgmtd beegfs-meta beegfs-storage -y && rm -rf /var/lib/apt/lists/*
-RUN rm -rf /etc/beegfs/*conf
-ENTRYPOINT ["/root/start.sh"]
-# arguments passed as commands in docker run will be passed as arguments to start.sh inturn passed to BeeGFS service.
